@@ -4,8 +4,8 @@ const router = express.Router();
 
 router.get('/hello', apiController.getHello);
 
-router.post('/shorturl', apiController.postNew);
+router.post('/users', apiController.addNewUser);
 
-router.get('/shorturl/:short_url?', apiController.getShortURL);
+router.post('/users/:_id/exercises', apiController.addNewExercise);
 
 module.exports = router;

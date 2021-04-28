@@ -1,70 +1,45 @@
 const shortid = require('shortid');
-const Mongo_URL = require('../models/url');
-const dns = require('dns');
+const USER = require('../models/user');
 
 exports.getHello = (req, res, next) => {
-  res.json({ greeting: 'hello from fcc-url-shortener' });
+  res.json({ greeting: 'hello from fcc-exercise-tracker' });
 };
 
-exports.postNew = async (req, res, next) => {
-  const url = req.body.url;
-  const urlCode = shortid.generate();
+exports.addNewUser = async (req, res, next) => {
+  const user = req.body.username;
+  const userId = shortid.generate();
 
-  //because we check only domain in dns.lookup
-  let domain = new URL(url);
-  domain = domain.hostname;
-
-  //check http / https protocol
-  if (!req.body.url.includes('http')) {
-    res.json({ error: 'invalid URL' });
-    return;
-  }
-
-  dns.lookup(domain, async err => {
-    // If the URL does not exist, return expected error
-
-    if (err) return res.json({ error: 'invalid URL' });
-
-    try {
-      let findOne = await Mongo_URL.findOne({ original_url: url });
-
-      if (findOne) {
-        res.json({
-          original_url: findOne.original_url,
-          short_url: findOne.short_url,
-        });
-      } else {
-        findOne = new Mongo_URL({
-          original_url: url,
-          short_url: urlCode,
-        });
-        await findOne.save();
-
-        res.json({
-          original_url: findOne.original_url,
-          short_url: findOne.short_url,
-        });
-      }
-    } catch (error) {
-      console.log(error);
-      res.status(500).json('Server error');
-    }
-  });
-};
-
-exports.getShortURL = async (req, res, next) => {
   try {
-    const urlParams = await Mongo_URL.findOne({
-      short_url: req.params.short_url,
-    });
+    let findOne = await USER.findOne({ name: user });
 
-    if (urlParams) {
-      return res.redirect(urlParams.original_url);
+    if (findOne) {
+      res.json({
+        name: findOne.name,
+        _id: findOne.id,
+      });
     } else {
-      return res.status(404).json('No URL found');
+      findOne = new USER({
+        name: user,
+        _id: userId,
+      });
+      await findOne.save();
+
+      res.json({
+        name: findOne.name,
+        _id: findOne.id,
+      });
     }
   } catch (error) {
     console.log(error);
     res.status(500).json('Server error');
   }
+};
+
+exports.addNewExercise = async (req, res, next) => {
+  const { description, duration, date } = req.body;
+  const id = req.body[':_id'];
+
+  console.log(id, description, duration, date);
+
+  res.json({ ok: 'ok' });
 };
