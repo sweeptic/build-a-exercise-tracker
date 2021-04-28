@@ -35,6 +35,19 @@ exports.addNewUser = async (req, res, next) => {
   }
 };
 
+exports.getAllUser = async (req, res, next) => {
+  let findAll = await USER.find();
+
+  res.json(
+    findAll.map(user => {
+      return {
+        name: user.name,
+        _id: user.id,
+      };
+    })
+  );
+};
+
 exports.addNewExercise = async (req, res, next) => {
   const { description, duration, date } = req.body;
   const id = req.body[':_id'];
