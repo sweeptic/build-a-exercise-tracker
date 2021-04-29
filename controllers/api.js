@@ -51,7 +51,13 @@ exports.addNewExercise = async (req, res, next) => {
   let { description, duration, date } = req.body;
   const id = req.body[':_id'];
 
-  date === '' ? (date = new Date().toISOString().slice(0, 10)) : date;
+  if (date === '') {
+    date = new Date().toISOString().slice(0, 10);
+  } else {
+    if (new Date(date) == 'Invalid Date') {
+      return res.status(404).json('Date is not in correct format');
+    }
+  }
 
   const createdExercise = new EXERCISE({
     description,
@@ -83,19 +89,16 @@ exports.addNewExercise = async (req, res, next) => {
     await sess.commitTransaction();
 
     let userWithExercises;
+
     try {
       userWithExercises = await USER.findById(id).populate('exercises');
     } catch (err) {
-      const error = new HttpError(
-        'Fetching exercises failed, please try again later',
-        500
-      );
-      return next(error);
+      res.status(404).json('Fetching exercises failed, please try again later');
     }
 
-    if (!userWithExercises || userWithExercises.exercises.length === 0) {
-      res.status(404).json('Could not find any exercises');
-    }
+    // if (!userWithExercises || userWithExercises.exercises.length === 0) {
+    //   res.status(404).json('Could not find any exercises');
+    // }
     res.json({
       username: user.name,
       userid: user._id,
@@ -106,4 +109,71 @@ exports.addNewExercise = async (req, res, next) => {
   } catch (err) {
     res.status(404).json('Creating exercise failed, please try again');
   }
+};
+
+exports.getUserLog = async (req, res, next) => {
+  const id = req.params._id;
+  const from = req.query.from ? new Date(req.query.from) : null;
+  const to = req.query.to ? new Date(req.query.to) : null;
+  const limit = req.query.limit ? req.query.limit : null;
+
+  let user;
+
+  if (from == 'Invalid Date' || to == 'Invalid Date') {
+    return res.status(404).json('Date is not in correct format');
+  }
+
+  try {
+    user = await USER.findById(id);
+  } catch (error) {
+    console.log(error);
+    return res.status(500).json('Server error');
+  }
+  //code duplication
+  if (!user) {
+    return res.status(404).json('Could not find user for provided id.');
+  }
+
+  let userWithExercises;
+  try {
+    userWithExercises = await USER.findById(id).populate('exercises');
+  } catch (err) {
+    return res
+      .status(500)
+      .json('Fetching exercises failed, please try again later');
+  }
+
+  //http://localhost:3000/api/users/608978aaa5a52f42505b6e6f/logs/?from=2021-04-01&to=2021-04-29&limit=789
+
+  console.log(from);
+
+  if (from || to) {
+    userWithExercises.exercises = userWithExercises.exercises.filter(item =>
+      from && !to
+        ? item.date >= from
+        : !from && to
+        ? item.date <= to
+        : from && to
+        ? item.date >= from && item.date <= to
+        : item
+    );
+  }
+
+  if (limit) {
+    userWithExercises.exercises.splice(
+      limit,
+      userWithExercises.exercises.length
+    );
+  }
+
+  res.json({
+    username: user.name,
+    userid: user._id,
+    exercises:
+      userWithExercises.exercises.length !== 0
+        ? userWithExercises.exercises.map(ex => ex.toObject({ getters: true }))
+        : [],
+
+    count: userWithExercises.exercises.length,
+  });
 };

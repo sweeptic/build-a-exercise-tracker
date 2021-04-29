@@ -9,4 +9,6 @@ router.get('/users', apiController.getAllUser);
 
 router.post('/users/:_id/exercises', apiController.addNewExercise);
 
+router.get('/users/:_id/logs/', apiController.getUserLog);
+
 module.exports = router;
