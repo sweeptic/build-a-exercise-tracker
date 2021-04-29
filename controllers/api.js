@@ -10,21 +10,21 @@ exports.addNewUser = async (req, res, next) => {
   const user = req.body.username;
 
   try {
-    let findOne = await USER.findOne({ name: user });
+    let findOne = await USER.findOne({ username: user });
 
     if (findOne) {
       res.json({
-        name: findOne.name,
+        username: findOne.username,
         _id: findOne._id,
       });
     } else {
       findOne = new USER({
-        name: user,
+        username: user,
       });
       await findOne.save();
 
       res.json({
-        name: findOne.name,
+        username: findOne.username,
         _id: findOne._id,
       });
     }
@@ -40,7 +40,7 @@ exports.getAllUser = async (req, res, next) => {
   res.json(
     findAll.map(user => {
       return {
-        name: user.name,
+        username: user.username,
         _id: user._id,
       };
     })
@@ -100,7 +100,7 @@ exports.addNewExercise = async (req, res, next) => {
     //   res.status(404).json('Could not find any exercises');
     // }
     res.json({
-      username: user.name,
+      username: user.username,
       userid: user._id,
       exercises: userWithExercises.exercises.map(ex =>
         ex.toObject({ getters: true })
@@ -167,7 +167,7 @@ exports.getUserLog = async (req, res, next) => {
   }
 
   res.json({
-    username: user.name,
+    username: user.username,
     userid: user._id,
     exercises:
       userWithExercises.exercises.length !== 0
