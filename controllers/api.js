@@ -95,7 +95,7 @@ exports.addNewExercise = async (req, res, next) => {
     await user.save({ session: sess });
     await sess.commitTransaction();
 
-    res.json({
+    return res.json({
       _id: user._id,
       username: user.username,
       date: createdExercise.date.toDateString(),
