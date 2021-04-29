@@ -59,6 +59,14 @@ exports.addNewExercise = async (req, res, next) => {
     }
   }
 
+  if (description === '') {
+    return res.status(404).json('Description field is required');
+  }
+
+  if (duration === '') {
+    return res.status(404).json('Duration field is required');
+  }
+
   const createdExercise = new EXERCISE({
     description,
     duration,
@@ -71,12 +79,11 @@ exports.addNewExercise = async (req, res, next) => {
   try {
     user = await USER.findById(id);
   } catch (error) {
-    console.log(error);
-    res.status(500).json('Server error');
+    return res.status(500).json('Server error');
   }
 
   if (!user) {
-    res.status(404).json('Could not find user for provided id.');
+    return res.status(404).json('Could not find user for provided id.');
   }
 
   try {
@@ -96,7 +103,7 @@ exports.addNewExercise = async (req, res, next) => {
       description: createdExercise.description,
     });
   } catch (err) {
-    res.status(404).json('Creating exercise failed, please try again');
+    return res.status(404).json('Creating exercise failed, please try again');
   }
 };
 
