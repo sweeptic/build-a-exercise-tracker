@@ -49,7 +49,7 @@ exports.getAllUser = async (req, res, next) => {
 
 exports.addNewExercise = async (req, res, next) => {
   let { description, duration, date } = req.body;
-  const id = req.body[':_id'];
+  const id = req.params._id;
 
   if (date === '') {
     date = new Date().toISOString().slice(0, 10);
