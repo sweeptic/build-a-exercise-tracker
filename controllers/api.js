@@ -98,7 +98,7 @@ exports.addNewExercise = async (req, res, next) => {
     res.json({
       _id: user._id,
       username: user.username,
-      date: new Date(createdExercise.date).toDateString(),
+      date: createdExercise.date.toDateString(),
       duration: createdExercise.duration,
       description: createdExercise.description,
     });
