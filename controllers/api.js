@@ -101,10 +101,10 @@ exports.addNewExercise = async (req, res, next) => {
     // }
     res.json({
       username: user.username,
-      userid: user._id,
-      exercises: userWithExercises.exercises.map(ex =>
-        ex.toObject({ getters: true })
-      ),
+      _id: user._id,
+      date: createdExercise.date,
+      duration: createdExercise.duration,
+      description: createdExercise.description,
     });
   } catch (err) {
     res.status(404).json('Creating exercise failed, please try again');
