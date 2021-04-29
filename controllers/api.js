@@ -89,8 +89,8 @@ exports.addNewExercise = async (req, res, next) => {
     await sess.commitTransaction();
 
     res.json({
-      username: user.username,
       _id: user._id,
+      username: user.username,
       date: new Date(createdExercise.date).toDateString(),
       duration: createdExercise.duration,
       description: createdExercise.description,
