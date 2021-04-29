@@ -88,21 +88,10 @@ exports.addNewExercise = async (req, res, next) => {
     await user.save({ session: sess });
     await sess.commitTransaction();
 
-    let userWithExercises;
-
-    try {
-      userWithExercises = await USER.findById(id).populate('exercises');
-    } catch (err) {
-      res.status(404).json('Fetching exercises failed, please try again later');
-    }
-
-    // if (!userWithExercises || userWithExercises.exercises.length === 0) {
-    //   res.status(404).json('Could not find any exercises');
-    // }
     res.json({
       username: user.username,
       _id: user._id,
-      date: createdExercise.date,
+      date: new Date(createdExercise.date).toDateString(),
       duration: createdExercise.duration,
       description: createdExercise.description,
     });
