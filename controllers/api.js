@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 const USER = require('../models/user');
-const EXERCISE = require('../models/exercise');
+const LOG = require('../models/log');
 
 exports.getHello = (req, res, next) => {
   res.json({ greeting: 'hello from fcc-exercise-tracker' });
@@ -52,7 +52,7 @@ exports.addNewExercise = async (req, res, next) => {
   const id = req.params._id;
 
   if (date === '') {
-    date = new Date().toISOString().slice(0, 10);
+    date = new Date(); //.toISOString().slice(0, 10);
   } else {
     if (new Date(date) == 'Invalid Date') {
       return res.status(404).json('Date is not in correct format');
@@ -67,7 +67,7 @@ exports.addNewExercise = async (req, res, next) => {
     return res.status(404).json('Duration field is required');
   }
 
-  const createdExercise = new EXERCISE({
+  const createdExercise = new LOG({
     description,
     duration,
     date,
@@ -91,7 +91,7 @@ exports.addNewExercise = async (req, res, next) => {
     sess.startTransaction();
     await createdExercise.save({ session: sess });
 
-    user.exercises.push(createdExercise);
+    user.log.push(createdExercise);
     await user.save({ session: sess });
     await sess.commitTransaction();
 
@@ -103,73 +103,71 @@ exports.addNewExercise = async (req, res, next) => {
       description: createdExercise.description,
     });
   } catch (err) {
+    console.log(err);
+
     return res.status(404).json('Creating exercise failed, please try again');
   }
 };
 
 exports.getUserLog = async (req, res, next) => {
-  const id = req.params._id;
-  const from = req.query.from ? new Date(req.query.from) : null;
-  const to = req.query.to ? new Date(req.query.to) : null;
-  const limit = req.query.limit ? req.query.limit : null;
+  let id = mongoose.Types.ObjectId(req.params._id);
 
-  let user;
+  const dateQueryFactory = (queryProp, value) =>
+    value === undefined ? null : { [queryProp]: [`$date`, new Date(value)] };
 
-  if (from == 'Invalid Date' || to == 'Invalid Date') {
-    return res.status(404).json('Date is not in correct format');
-  }
+  let pipeline = [
+    {
+      $match: {
+        $expr: {
+          $and: [
+            { $in: ['$_id', '$$localLOG'] },
+            dateQueryFactory('$gte', req.query.from),
+            dateQueryFactory('$lt', req.query.to),
+          ].filter(q => q !== null),
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        date: {
+          $dateToString: { format: '%Y-%m-%d', date: '$date' },
+        },
+        description: '$description',
+        duration: '$duration',
+      },
+    },
+  ];
 
-  try {
-    user = await USER.findById(id);
-  } catch (error) {
-    console.log(error);
-    return res.status(500).json('Server error');
-  }
-  //code duplication
-  if (!user) {
-    return res.status(404).json('Could not find user for provided id.');
-  }
+  if (req.query.limit) pipeline.push({ $limit: +req.query.limit });
 
-  let userWithExercises;
-  try {
-    userWithExercises = await USER.findById(id).populate('exercises');
-  } catch (err) {
-    return res
-      .status(500)
-      .json('Fetching exercises failed, please try again later');
-  }
+  const query = await USER.aggregate([
+    {
+      $match: { _id: id },
+    },
+    {
+      $lookup: {
+        from: 'logs',
+        let: {
+          localLOG: '$log',
+        },
+        pipeline: pipeline,
+        as: 'log',
+      },
+    },
 
-  //http://localhost:3000/api/users/608978aaa5a52f42505b6e6f/logs/?from=2021-04-01&to=2021-04-29&limit=789
+    {
+      $project: {
+        username: 1,
+        _id: 1,
+        log: 1,
+        count: { $size: '$log' },
+      },
+    },
+  ])
+    .exec()
+    .then(items => items[0]);
 
-  console.log(from);
-
-  if (from || to) {
-    userWithExercises.exercises = userWithExercises.exercises.filter(item =>
-      from && !to
-        ? item.date >= from
-        : !from && to
-        ? item.date <= to
-        : from && to
-        ? item.date >= from && item.date <= to
-        : item
-    );
-  }
-
-  if (limit) {
-    userWithExercises.exercises.splice(
-      limit,
-      userWithExercises.exercises.length
-    );
-  }
-
-  res.json({
-    username: user.username,
-    userid: user._id,
-    exercises:
-      userWithExercises.exercises.length !== 0
-        ? userWithExercises.exercises.map(ex => ex.toObject({ getters: true }))
-        : [],
-
-    count: userWithExercises.exercises.length,
-  });
+  console.log(query);
+  return res.json(query);
 };
