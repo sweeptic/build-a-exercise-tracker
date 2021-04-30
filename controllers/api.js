@@ -130,9 +130,10 @@ exports.getUserLog = async (req, res, next) => {
     {
       $project: {
         _id: 0,
-        date: {
-          $dateToString: { format: '%Y-%m-%d', date: '$date' },
-        },
+        // date: {
+        //   $dateToString: { format: '%Y-%m-%d', date: '$date' },
+        // },
+        date: '$date',
         description: '$description',
         duration: '$duration',
       },
