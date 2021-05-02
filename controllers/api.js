@@ -49,12 +49,11 @@ exports.getAllUser = async (req, res, next) => {
 
 exports.addNewExercise = async (req, res, next) => {
   let { description, duration, date } = req.body;
-  const id = req.params._id;
+  const _id = req.params._id;
 
-  console.log(req.params);
-  console.log(req.query);
+  console.log(typeof req.body.date);
 
-  if (date == '' && date == 'undefined') {
+  if (date === '' || typeof date === 'undefined') {
     date = new Date(); //.toISOString().slice(0, 10);
   } else {
     if (new Date(date) == 'Invalid Date') {
@@ -74,13 +73,13 @@ exports.addNewExercise = async (req, res, next) => {
     description,
     duration,
     date,
-    creator: id,
+    creator: _id,
   });
 
   let user;
 
   try {
-    user = await USER.findById(id);
+    user = await USER.findById(_id);
   } catch (error) {
     return res.status(500).json('Server error');
   }
