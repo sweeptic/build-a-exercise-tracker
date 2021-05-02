@@ -51,7 +51,10 @@ exports.addNewExercise = async (req, res, next) => {
   let { description, duration, date } = req.body;
   const id = req.params._id;
 
-  if (date === '') {
+  console.log(req.params);
+  console.log(req.query);
+
+  if (date == '' && date == 'undefined') {
     date = new Date(); //.toISOString().slice(0, 10);
   } else {
     if (new Date(date) == 'Invalid Date') {
